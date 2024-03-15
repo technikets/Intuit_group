@@ -1,0 +1,61 @@
+import pandas
+import mba263 as mba263
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn.preprocessing import LabelEncoder
+
+from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.metrics import roc_auc_score
+
+from sklearn.model_selection import cross_val_score
+from sklearn.ensemble import GradientBoostingClassifier, AdaBoostClassifier
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import roc_auc_score
+
+intuit_data = pandas.read_csv('intuit.csv')
+combozip_data = pandas.read_csv('ComboZip1.csv')
+
+intuit_data.info()
+summary = intuit_data.describe(include='all')
+
+columns_of_interest = ['sex','zip','version1','upgraded','owntaxprod','numords']
+for column in columns_of_interest:
+    print(f"Value counts for {column}:")
+    print(intuit_data[column].value_counts())
+    print("\n")  # Adds a newline for readability
+
+
+# Define a function to truncate the zip code based on its length
+def truncate_zip(zip_code):
+    zip_str = str(zip_code)
+    if len(zip_str) == 3:
+        return zip_str[:1]
+    elif len(zip_str) == 4:
+        return zip_str[:2]
+    elif len(zip_str) == 1:
+        return zip_str[:1]
+    elif len(zip_str) == 5:
+        if zip_str == "99999":
+            return zip_str  # Return as is for '99999'
+        else:
+            return zip_str[:3]
+    else:
+        return None  # Handle unexpected zip code lengths appropriately
+
+# Apply the function to create the 'truncZip' column
+intuit_data['truncZip'] = intuit_data['zip'].apply(truncate_zip)
+
+# Convert 'truncZip' in intuit_data and 'Value' in combozip_data to the same type (string) to ensure proper comparison
+intuit_data['truncZip'] = intuit_data['truncZip'].astype(str)
+combozip_data['Value'] = combozip_data['Value'].astype(str)
+
+# Map 'Value' from combozip_data to 'truncZip' in intuit_data to find the corresponding 'Column Label'
+mapping = dict(combozip_data[['Value', 'Column Label']].values)
+intuit_data['newzip_bin'] = intuit_data['truncZip'].map(mapping)
+
+#export file manual check if output is right
+intuit_data.to_csv('intuit_modified.csv', index=False)
