@@ -57,5 +57,8 @@ combozip_data['Value'] = combozip_data['Value'].astype(str)
 mapping = dict(combozip_data[['Value', 'Column Label']].values)
 intuit_data['newzip_bin'] = intuit_data['truncZip'].map(mapping)
 
+# Fill in missing or blank values in 'newzip_bin' with 404
+intuit_data['newzip_bin'] = intuit_data['newzip_bin'].fillna('404')
+
 #export file manual check if output is right
 intuit_data.to_csv('intuit_modified.csv', index=False)
