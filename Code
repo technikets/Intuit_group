@@ -15,10 +15,10 @@ from sklearn.ensemble import GradientBoostingClassifier, AdaBoostClassifier
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import roc_auc_score
-
+-------------
 intuit_data = pandas.read_csv('intuit.csv')
 combozip_data = pandas.read_csv('ComboZip1.csv')
-
+-------------
 intuit_data.info()
 summary = intuit_data.describe(include='all')
 
@@ -27,7 +27,7 @@ for column in columns_of_interest:
     print(f"Value counts for {column}:")
     print(intuit_data[column].value_counts())
     print("\n")  # Adds a newline for readability
-
+-------------
 
 # Define a function to truncate the zip code based on its length
 def truncate_zip(zip_code):
@@ -62,3 +62,67 @@ intuit_data['newzip_bin'] = intuit_data['newzip_bin'].fillna('404')
 
 #export file manual check if output is right
 intuit_data.to_csv('intuit_modified.csv', index=False)
+-------------
+newzip_bin=pandas.get_dummies(intuit_data['newzip_bin'],drop_first=True,prefix="newzip_bin")
+intuit_data=pandas.concat([intuit_data,newzip_bin],axis=1)
+intuit_data.columns
+
+-------------
+# Create dummy columns for male and female with initial values set to 0
+intuit_data['male'] = 0
+intuit_data['female'] = 0
+# Update the dummy columns based on the sex column
+intuit_data.loc[intuit_data['sex'] == 'M', 'male'] = 1
+intuit_data.loc[intuit_data['sex'] == 'F', 'female'] = 1
+intuit_data.loc[intuit_data['sex'] == 'B', ['male', 'female']] = 1, 1
+print(intuit_data.head())
+--------------
+varlist1=['bizflag', 'numords', 'dollars', 'last',
+       'sincepurch', 'version1', 'owntaxprod', 'upgraded', 'truncZip',
+       'newzip_bin', 'newzip_bin_1.0', 'newzip_bin_2.0', 'newzip_bin_3.0',
+       'newzip_bin_4.0', 'newzip_bin_5.0', 'newzip_bin_6.0', 'newzip_bin_7.0',
+       'newzip_bin_8.0', 'newzip_bin_9.0', 'newzip_bin_10.0',
+       'newzip_bin_11.0', 'newzip_bin_12.0', 'newzip_bin_13.0',
+       'newzip_bin_14.0', 'newzip_bin_15.0', 'newzip_bin_16.0',
+       'newzip_bin_17.0', 'newzip_bin_18.0', 'newzip_bin_19.0',
+       'newzip_bin_20.0', 'newzip_bin_21.0', 'newzip_bin_22.0',
+       'newzip_bin_23.0', 'newzip_bin_24.0', 'newzip_bin_25.0',
+       'newzip_bin_26.0', 'newzip_bin_27.0', 'newzip_bin_28.0',
+       'newzip_bin_29.0', 'newzip_bin_30.0', 'newzip_bin_31.0',
+       'newzip_bin_32.0', 'newzip_bin_33.0', 'newzip_bin_34.0',
+       'newzip_bin_35.0', 'newzip_bin_36.0', 'newzip_bin_37.0',
+       'newzip_bin_38.0', 'newzip_bin_39.0', 'newzip_bin_40.0',
+       'newzip_bin_41.0', 'newzip_bin_42.0', 'newzip_bin_43.0',
+       'newzip_bin_44.0', 'newzip_bin_45.0', 'newzip_bin_46.0',
+       'newzip_bin_47.0', 'newzip_bin_48.0', 'newzip_bin_49.0',
+       'newzip_bin_50.0', 'newzip_bin_99999.0', 'newzip_bin_404','male','female']
+
+res_nn = mba263.neural_network(intuit_data['res1'],intuit_data[varlist1])
+intuit_data['pred_nn']=res_nn.predict(intuit_data[varlist1])
+
+gains_nn=mba263.gain(intuit_data['res1'],intuit_data['pred_nn'],30)
+plt.plot(gains_nn,'r')
+plt.plot([0,30],[0,1],'b')
+
+-------------
+#cross-validation
+# Select features and target variable for the prediction
+features = intuit_data.drop(columns=['id', 'sex','res1','truncZip', 'zip', 'zip_bins','pred_nn'])
+target = data['res1']
+
+# Split the data into training and test sets
+X_train, X_test, Y_train, Y_test = train_test_split(features, target, test_size=0.2, random_state=42)
+
+result_nn_train=mba263.neural_network(Y_train, X_train,hidden_layer_sizes=(10,10))
+#usese model to predict the entire data set train and test
+data_calibration['cv_p_nn']=result_nn_train.predict(X_train)
+data_validation['cv_p_nn']=result_nn_train.predict(X_test)
+
+#calculate gains
+gains_nn_train=mba263.gain(Y_train['res1'],X_train['cv_p_nn'],30)
+gains_nn_cross=mba263.gain(Y_test['res'],X_test['cv_p_nn'],30)
+plt.plot(gains_rf_cross,'y')
+plt.plot(gains_rf,'r')
+plt.plot(gains_nn_train,'g')
+plt.plot(gains_nn_cross,'m')
+plt.plot([0,30],[0,1],'b')
